@@ -1,65 +1,113 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Java CI with Maven
+name: Java CI with Maven and Platform Executables
 
 on:
   push:
-    branches: 
+    branches:
       - develop
   workflow_dispatch:
 
 jobs:
-  build:
-
+  build-jar:
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    name: Build JAR
 
     steps:
-    - name: Get Code
-      uses: actions/checkout@v4
+      - name: Get Code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
+      - name: Run Tests
+        run: mvn clean test -B -Dstyle.color=always -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
-    - name: Run Tests
-      run: mvn clean test -B -Dstyle.color=always -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: Build with Maven
+        run: |
+          mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
-    - name: Build with Maven
-      run: |
-        mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: Upload JAR to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/demo1-1.0-SNAPSHOT-shaded.jar
+          asset_name: demo1-1.0-SNAPSHOT-shaded.jar
+          asset_content_type: application/java-archive
 
-    - name: List target directory contents
-      run: ls -R target
+  create-release:
+    needs: build-jar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          release_name: "Release v1.0.${{ github.run_number }}"
+          draft: false
+          prerelease: false
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: "Release v1.0.${{ github.run_number }}"
-        draft: false
-        prerelease: false
+  package-macos:
+    needs: create-release
+    runs-on: macos-latest
+    name: Package macOS Executable
 
-    - name: Upload JAR to Release
-      if: success()
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: target/demo1-1.0-SNAPSHOT-shaded.jar
-        asset_name: demo1-1.0-SNAPSHOT-shaded.jar
-        asset_content_type: application/java-archive
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Package with jpackage (macOS)
+        run: |
+          jpackage --input target --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type dmg --dest output
+
+      - name: Upload macOS Executable to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: output/MyApp-1.0.dmg
+          asset_name: MyApp-1.0-macOS.dmg
+          asset_content_type: application/x-apple-diskimage
+
+  package-windows:
+    needs: create-release
+    runs-on: windows-latest
+    name: Package Windows Executable
+
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Package with jpackage (Windows)
+        run: |
+          jpackage --input target --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type exe --dest output
+
+      - name: Upload Windows Executable to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: output/MyApp.exe
+          asset_name: MyApp-1.0-Windows.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
