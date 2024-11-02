@@ -15,6 +15,6 @@ public class Main {
     }
 
     public static String greetings(String name) {
-        return "hello" + name;
+        return "hello " + name;
     }
 }
