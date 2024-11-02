@@ -47,7 +47,7 @@ jobs:
           mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
       - name: Upload JAR as Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: demo1-jar
           path: target/demo1-1.0-SNAPSHOT-shaded.jar
@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Download JAR Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: demo1-jar
 
@@ -92,7 +92,7 @@ jobs:
 
     steps:
       - name: Download JAR Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: demo1-jar
 
