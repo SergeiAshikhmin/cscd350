@@ -13,4 +13,8 @@ public class Main {
             System.out.println("WHATT???");
         }
     }
+
+    public static String greetings(String name) {
+        return "hello" + name;
+    }
 }
