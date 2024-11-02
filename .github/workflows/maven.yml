@@ -53,7 +53,7 @@ jobs:
           path: target/demo1-1.0-SNAPSHOT-shaded.jar
 
   package-macos:
-    needs: [create-release, build-jar]
+    needs: [ create-release, build-jar ]
     runs-on: macos-latest
     name: Package macOS Executable
 
@@ -71,11 +71,15 @@ jobs:
 
       - name: Package with jpackage (macOS)
         run: |
-          mkdir -p package
+          mkdir -p package output
           mv demo1-1.0-SNAPSHOT-shaded.jar package/
-          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type dmg --dest output
+          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --main-class com.example.demo1.Main --type dmg --dest output
+
+      - name: List Output Directory (Debugging)
+        run: ls -R output
 
       - name: Upload macOS Executable to Release
+        if: success()
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,8 +89,9 @@ jobs:
           asset_name: MyApp-1.0-macOS.dmg
           asset_content_type: application/x-apple-diskimage
 
+
   package-windows:
-    needs: [create-release, build-jar]
+    needs: [ create-release, build-jar ]
     runs-on: windows-latest
     name: Package Windows Executable
 
@@ -104,11 +109,15 @@ jobs:
 
       - name: Package with jpackage (Windows)
         run: |
-          mkdir package
+          mkdir package output
           move demo1-1.0-SNAPSHOT-shaded.jar package\
-          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type exe --dest output
+          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --main-class com.example.demo1.Main --type exe --dest output
+
+      - name: List Output Directory (Debugging)
+        run: dir output
 
       - name: Upload Windows Executable to Release
+        if: success()
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,3 +126,4 @@ jobs:
           asset_path: output\MyApp.exe
           asset_name: MyApp-1.0-Windows.exe
           asset_content_type: application/vnd.microsoft.portable-executable
+  
