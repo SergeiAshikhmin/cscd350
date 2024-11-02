@@ -40,8 +40,23 @@ jobs:
         mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
         mkdir staging && cp target/*jar staging
 
-    - name: Upload JAR Files
-      uses: actions/upload-artifact@v3
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: jar-files
-        path: staging
+        tag_name: v1.0.0
+        release_name: "Release v1.0.0"
+        draft: false
+        prerelease: false
+
+    - name: Upload JAR to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: target/*.jar
+        asset_name: my-artifact.jar
+        asset_content_type: application/java-archive
