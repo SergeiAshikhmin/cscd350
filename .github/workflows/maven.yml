@@ -31,5 +31,9 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
+
+    - name: Run Tests
+      run: mvn clean test mvn clean test -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
     - name: Build with Maven
-      run: mvn clean package
+      run: mvn package -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
