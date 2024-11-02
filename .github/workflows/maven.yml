@@ -46,24 +46,22 @@ jobs:
         run: |
           mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
-      - name: Upload JAR to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload JAR as Artifact
+        uses: actions/upload-artifact@v2
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/demo1-1.0-SNAPSHOT-shaded.jar
-          asset_name: demo1-1.0-SNAPSHOT-shaded.jar
-          asset_content_type: application/java-archive
+          name: demo1-jar
+          path: target/demo1-1.0-SNAPSHOT-shaded.jar
 
   package-macos:
-    needs: build-jar
+    needs: [create-release, build-jar]
     runs-on: macos-latest
     name: Package macOS Executable
 
     steps:
-      - name: Get Code
-        uses: actions/checkout@v4
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: demo1-jar
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -71,13 +69,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Copy JAR to Package Directory
-        run: |
-          mkdir -p package
-          cp target/demo1-1.0-SNAPSHOT-shaded.jar package/
-
       - name: Package with jpackage (macOS)
         run: |
+          mkdir -p package
+          mv demo1-1.0-SNAPSHOT-shaded.jar package/
           jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type dmg --dest output
 
       - name: Upload macOS Executable to Release
@@ -91,13 +86,15 @@ jobs:
           asset_content_type: application/x-apple-diskimage
 
   package-windows:
-    needs: build-jar
+    needs: [create-release, build-jar]
     runs-on: windows-latest
     name: Package Windows Executable
 
     steps:
-      - name: Get Code
-        uses: actions/checkout@v4
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: demo1-jar
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -105,13 +102,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Copy JAR to Package Directory
-        run: |
-          mkdir package
-          copy target\demo1-1.0-SNAPSHOT-shaded.jar package\
-
       - name: Package with jpackage (Windows)
         run: |
+          mkdir package
+          move demo1-1.0-SNAPSHOT-shaded.jar package\
           jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type exe --dest output
 
       - name: Upload Windows Executable to Release
