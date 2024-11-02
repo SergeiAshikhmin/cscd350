@@ -57,7 +57,7 @@ jobs:
           asset_content_type: application/java-archive
 
   package-macos:
-    needs: create-release
+    needs: build-jar
     runs-on: macos-latest
     name: Package macOS Executable
 
@@ -71,9 +71,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Copy JAR to Package Directory
+        run: |
+          mkdir -p package
+          cp target/demo1-1.0-SNAPSHOT-shaded.jar package/
+
       - name: Package with jpackage (macOS)
         run: |
-          jpackage --input target --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type dmg --dest output
+          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type dmg --dest output
 
       - name: Upload macOS Executable to Release
         uses: actions/upload-release-asset@v1
@@ -81,12 +86,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: output/MyApp-1.0.dmg
+          asset_path: output/MyApp.dmg
           asset_name: MyApp-1.0-macOS.dmg
           asset_content_type: application/x-apple-diskimage
 
   package-windows:
-    needs: create-release
+    needs: build-jar
     runs-on: windows-latest
     name: Package Windows Executable
 
@@ -100,9 +105,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Copy JAR to Package Directory
+        run: |
+          mkdir package
+          copy target\demo1-1.0-SNAPSHOT-shaded.jar package\
+
       - name: Package with jpackage (Windows)
         run: |
-          jpackage --input target --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type exe --dest output
+          jpackage --input package --name MyApp --main-jar demo1-1.0-SNAPSHOT-shaded.jar --type exe --dest output
 
       - name: Upload Windows Executable to Release
         uses: actions/upload-release-asset@v1
@@ -110,6 +120,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: output/MyApp.exe
+          asset_path: output\MyApp.exe
           asset_name: MyApp-1.0-Windows.exe
           asset_content_type: application/vnd.microsoft.portable-executable
