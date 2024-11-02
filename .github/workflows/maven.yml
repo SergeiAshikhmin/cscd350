@@ -38,7 +38,6 @@ jobs:
     - name: Build with Maven
       run: |
         mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-        mkdir staging && cp target/*jar staging
 
     - name: Create Release
       id: create_release
@@ -52,6 +51,7 @@ jobs:
         prerelease: false
 
     - name: Upload JAR to Release
+      if: success()
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
