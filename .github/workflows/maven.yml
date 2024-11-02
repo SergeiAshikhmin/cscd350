@@ -7,7 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          release_name: "Release v1.0.${{ github.run_number }}"
+          draft: false
+          prerelease: false
+
   build-jar:
+    needs: create-release
     runs-on: ubuntu-latest
     name: Build JAR
 
@@ -34,25 +51,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: target/demo1-1.0-SNAPSHOT-shaded.jar
           asset_name: demo1-1.0-SNAPSHOT-shaded.jar
           asset_content_type: application/java-archive
-
-  create-release:
-    needs: build-jar
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          release_name: "Release v1.0.${{ github.run_number }}"
-          draft: false
-          prerelease: false
 
   package-macos:
     needs: create-release
