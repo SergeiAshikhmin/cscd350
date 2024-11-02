@@ -39,6 +39,9 @@ jobs:
       run: |
         mvn -B package -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
+    - name: List target directory contents
+      run: ls -R target
+      
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
