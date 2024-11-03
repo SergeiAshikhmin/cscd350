@@ -9,6 +9,9 @@ public class Main {
         else if(args[0].equals("--cli")) {
             CLI.main(args);
         }
+        else if(args[0].equals("--help")) {
+            System.out.println("Help man page>>>");
+        }
         else {
             System.out.println("WHATT???");
         }
